@@ -47,6 +47,17 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
 
+  // 1 & 3. Renter Identity, NIN & Guarantor Verification Fields
+  const [ninNumber, setNinNumber] = useState("CM98012345678A");
+  const [villageLC1, setVillageLC1] = useState("Kicwamba Village, LC1 Zone 3");
+  const [idFrontUploaded, setIdFrontUploaded] = useState(true);
+  const [idBackUploaded, setIdBackUploaded] = useState(true);
+  const [selfieVerified, setSelfieVerified] = useState(true);
+  const [nextOfKinName, setNextOfKinName] = useState("Kembabazi Florence");
+  const [nextOfKinPhone, setNextOfKinPhone] = useState("+256 774 333 444");
+  const [lc1Name, setLc1Name] = useState("Chairman Mwesigwa Paul");
+  const [lc1Phone, setLc1Phone] = useState("+256 782 999 888");
+
   // Splash screen auto timer
   useEffect(() => {
     if (authState === "splash") {
@@ -493,6 +504,108 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 />
               </div>
             </div>
+
+            {/* Renter Trust Verification Section (Only shown when selectedRole === 'renter') */}
+            {selectedRole === "renter" && (
+              <div className="p-4 bg-[#F1EDE3]/70 border border-[#E2A33B]/40 rounded-2xl space-y-3.5 my-3">
+                <div className="flex items-center justify-between border-b border-[#DAD4C4] pb-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#3A2A0D]">
+                    <ShieldCheck size={16} className="text-[#B97F22]" />
+                    <span>1. Renter Identity & Social Accountability Verification</span>
+                  </div>
+                  <span className="text-[10px] bg-[#E2A33B] text-[#3A2A0D] px-2 py-0.5 rounded-full font-bold">
+                    Escrow Stake Protection
+                  </span>
+                </div>
+
+                {/* NIN & Village LC1 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
+                      National ID Number (NIN)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={ninNumber}
+                      onChange={(e) => setNinNumber(e.target.value)}
+                      placeholder="e.g. CM98012345678A"
+                      className="w-full px-3 py-2 text-sm bg-white border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34] font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
+                      Village / LC1 Location
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={villageLC1}
+                      onChange={(e) => setVillageLC1(e.target.value)}
+                      placeholder="e.g. Kicwamba Village, LC1 Zone 3"
+                      className="w-full px-3 py-2 text-sm bg-white border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
+                    />
+                  </div>
+                </div>
+
+                {/* ID Photo Uploads & Selfie Simulation */}
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
+                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">National ID Front</div>
+                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
+                      <CheckCircle2 size={12} /> Front Uploaded
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
+                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">National ID Back</div>
+                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
+                      <CheckCircle2 size={12} /> Back Uploaded
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
+                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">Selfie Match</div>
+                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
+                      <CheckCircle2 size={12} /> Verified
+                    </span>
+                  </div>
+                </div>
+
+                {/* Next of Kin & LC1 Reference */}
+                <div className="border-t border-[#DAD4C4] pt-2">
+                  <div className="text-[11px] font-bold text-[#243B34] mb-2 flex items-center gap-1.5">
+                    <Users size={13} />
+                    <span>3. Social Accountability & Guarantor Contact</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#6B6A62] block mb-0.5">
+                        Next of Kin / Guarantor Name & Phone
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={nextOfKinName + " (" + nextOfKinPhone + ")"}
+                        onChange={(e) => setNextOfKinName(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#DAD4C4] rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#6B6A62] block mb-0.5">
+                        LC1 Chairperson Reference
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={lc1Name + " (" + lc1Phone + ")"}
+                        onChange={(e) => setLc1Name(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#DAD4C4] rounded-lg"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-xs font-semibold text-[#6B6A62] block mb-1">Create Password</label>
