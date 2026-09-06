@@ -1,8 +1,8 @@
 # Coding Conventions
 
-1. **Functional Programming**: Avoid classes for services and repositories. Export standalone functions.
-2. **Strict Typing**: Use strict TypeScript. Avoid `any`. Use Zod for runtime validation.
-3. **Immutability**: Avoid mutating objects.
-4. **Error Handling**: Use standard error objects defined in `src/lib/errors.ts`. Avoid throwing raw strings.
-5. **Component Structure**: Keep components small and focused. Complex components should be broken down into sub-components.
-6. **No Shared State via Modules**: State should be passed as arguments.
+1. **Functional Programming**: Strictly export standalone pure functions. Do not use classes for services, repositories, or controllers. Keep functions deterministic and side-effect free where possible.
+2. **High Modularity**: Maintain small, focused, single-responsibility files and components. Break large components into modular sub-components (target < 150-200 lines per file).
+3. **Strict Typing & Runtime Validation**: Use strict TypeScript (`noImplicitAny`, no `any`). Enforce input schemas with Zod.
+4. **Immutability**: Treat data structures as immutable. Use functional transformations (`map`, `filter`, `reduce`, object spread) instead of mutating in place.
+5. **Error Handling**: Use standard error factories defined in `src/lib/errors.ts`. Avoid throwing unhandled raw strings.
+6. **No Shared State via Modules**: Pass state explicitly as function parameters or React props. Avoid module-level mutable variables.
