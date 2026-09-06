@@ -17,7 +17,12 @@ export async function POST(request: Request) {
       renterId: body.renterId,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
+      rentalFeeTotal: Number(body.rentalFeeTotal || body.totalAmount * 0.7),
+      securityDepositTotal: Number(body.securityDepositTotal || body.totalAmount * 0.25),
+      serviceFeeTotal: Number(body.serviceFeeTotal || 25000),
       totalAmount: Number(body.totalAmount),
+      purposeOfRental: body.purposeOfRental || 'General rental',
+      siteAddress: body.siteAddress || 'Site delivery location',
     });
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });

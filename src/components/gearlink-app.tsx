@@ -812,7 +812,7 @@ function BookingPage({ item, setPage, userRole }: { item: EquipmentItem; setPage
 
             {/* 4. Purpose & Logistics Input Form */}
             <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.line}`, borderRadius: 12, padding: 20, marginBottom: 18 }}>
-              <div className="gl-display" style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }} className="flex items-center gap-2">
+              <div className="gl-display flex items-center gap-2" style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
                 <MapPin size={16} className="text-[#C6821F]" />
                 <span>4. Stated Purpose & Worksite Logistics</span>
               </div>
@@ -1294,7 +1294,7 @@ function RenterDashboard() {
           return (
             <div key={b.eq} style={{ background: COLORS.panel, border: `1px solid ${COLORS.line}`, borderRadius: 12, padding: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
-                <div style={{ display: "flex", gap: 10, items: "center" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <div
                     style={{
                       width: 38,
@@ -1338,6 +1338,20 @@ function AgentDashboard() {
         <StatTile label="Owners onboarded" value="14" icon={UserPlus} />
         <StatTile label="Active logistics jobs" value="3" icon={Truck} />
         <StatTile label="Commission this month" value="UGX 260K" icon={Banknote} />
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- GOVERNANCE DASHBOARD ---------------- */
+function GovernanceDashboard() {
+  return (
+    <div>
+      <PageHeader eyebrow="Governance Officer dashboard" title="Equipment & Inspection Audit" subtitle="Rwenzori Region Inspection Log" />
+      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <StatTile label="Total Inspections" value="48" icon={ShieldCheck} />
+        <StatTile label="Pending Verification" value="3" icon={Clock} accent={COLORS.signalDark} />
+        <StatTile label="Compliant Fleet" value="98.2%" icon={CheckCircle2} />
       </div>
     </div>
   );

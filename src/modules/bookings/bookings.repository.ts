@@ -1,13 +1,18 @@
 import { eq, desc, and, isNull } from 'drizzle-orm';
-import { db } from '@/db';
-import { bookings } from '@/db/schema';
+import { db } from '../../db';
+import { bookings } from '../../db/schema';
 
 export type NewBookingInput = {
   equipmentId: string;
   renterId: string;
   startDate: Date;
   endDate: Date;
+  rentalFeeTotal: number;
+  securityDepositTotal: number;
+  serviceFeeTotal: number;
   totalAmount: number;
+  purposeOfRental: string;
+  siteAddress: string;
 };
 
 /**
@@ -35,7 +40,7 @@ export async function findBookingById(id: string) {
 }
 
 /**
- * Creates a new booking record.
+ * Creates a new booking record with escrow details.
  */
 export async function insertBooking(input: NewBookingInput) {
   const [created] = await db
@@ -45,7 +50,13 @@ export async function insertBooking(input: NewBookingInput) {
       renterId: input.renterId,
       startDate: input.startDate,
       endDate: input.endDate,
+      rentalFeeTotal: input.rentalFeeTotal,
+      securityDepositTotal: input.securityDepositTotal,
+      serviceFeeTotal: input.serviceFeeTotal,
       totalAmount: input.totalAmount,
+      purposeOfRental: input.purposeOfRental,
+      siteAddress: input.siteAddress,
+      escrowStatus: 'HELD',
       status: 'PENDING',
     })
     .returning();
