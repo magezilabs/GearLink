@@ -1,2 +1,1 @@
-// Payments module placeholder
-export * from './payments.service';
+export * from './payments.repository';

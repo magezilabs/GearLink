@@ -1,2 +1,1 @@
-// Governance module placeholder
-export * from './governance.service';
+export * from './governance.repository';

@@ -1,2 +1,1 @@
-// Bookings module placeholder
-export * from './bookings.service';
+export * from './bookings.repository';

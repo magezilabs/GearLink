@@ -1,2 +1,1 @@
-// Equipment module placeholder
-export * from './equipment.service';
+export * from './equipment.repository';
