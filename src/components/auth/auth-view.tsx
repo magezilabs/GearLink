@@ -2,20 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  HardHat,
-  Sprout,
-  Users,
-  Landmark,
-  Phone,
-  Mail,
-  Lock,
-  ArrowRight,
-  CheckCircle2,
-  ShieldCheck,
-  Smartphone,
-  RefreshCw,
-  ArrowLeft,
-  KeyRound,
+  HardHat, Sprout, Users, Landmark,
+  Phone, Mail, Lock, ArrowRight, ArrowLeft,
+  CheckCircle2, ShieldCheck, Smartphone,
+  RefreshCw, Eye, EyeOff, MapPin,
 } from "lucide-react";
 import { GearLinkLogo } from "@/components/ui/gearlink-logo";
 
@@ -24,180 +14,185 @@ interface AuthViewProps {
   onLoginSuccess: (userData: { name: string; role: string; phone: string; location: string }) => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({
-  initialState = "splash",
-  onLoginSuccess,
-}) => {
-  const [authState, setAuthState] = useState<"splash" | "login" | "register" | "forgot">(initialState);
+/* ── Shared input wrapper ──────────────────────────────────────────────────── */
+function Field({
+  label, icon: Icon, children,
+}: { label: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="gl-body block text-xs font-semibold text-[#6B6A62] mb-1.5 uppercase tracking-wide">
+        {label}
+      </label>
+      <div className="relative flex items-center">
+        <Icon size={15} className="absolute left-3.5 text-[#9B9A93] pointer-events-none z-10" />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const INPUT = "gl-body w-full pl-10 pr-4 py-3 text-sm bg-[#F7F4EF] border border-[#E2DCD0] rounded-xl text-[#1B1B18] placeholder-[#B5B2AB] font-medium focus:outline-none focus:bg-white focus:border-[#1A3029] focus:shadow-[0_0_0_3px_rgba(26,48,41,0.08)] transition-all";
+
+/* ── Demo login buttons ────────────────────────────────────────────────────── */
+const DEMO_ROLES = [
+  { role: "owner",  name: "Sekajigo James",     label: "Owner",      icon: HardHat,  color: "text-amber-600",   bg: "bg-amber-50 border-amber-200 hover:border-amber-400" },
+  { role: "renter", name: "Turyahikayo Grace",  label: "Renter",     icon: Sprout,   color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200 hover:border-emerald-400" },
+  { role: "agent",  name: "Byaruhanga Moses",   label: "Agent",      icon: Users,    color: "text-sky-600",     bg: "bg-sky-50 border-sky-200 hover:border-sky-400" },
+  { role: "gov",    name: "District Engineer",  label: "Governance", icon: Landmark, color: "text-violet-600",  bg: "bg-violet-50 border-violet-200 hover:border-violet-400" },
+];
+
+const ROLES = [
+  { key: "owner",  title: "Equipment Owner",     desc: "List machinery & earn from idle equipment.",    icon: HardHat,  color: "#D48E1D" },
+  { key: "renter", title: "Renter / Farmer",     desc: "Rent equipment for your project or farm.",      icon: Sprout,   color: "#2E7D32" },
+  { key: "agent",  title: "Youth Logistics Agent",desc: "Onboard owners & coordinate deliveries.",      icon: Users,    color: "#0277BD" },
+  { key: "gov",    title: "Governance Officer",  desc: "Oversee, audit, and certify listed equipment.", icon: Landmark, color: "#5E35B1" },
+];
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+export const AuthView: React.FC<AuthViewProps> = ({ initialState = "splash", onLoginSuccess }) => {
+  const [authState, setAuthState]   = useState<"splash" | "login" | "register" | "forgot">(initialState);
   const [loginMethod, setLoginMethod] = useState<"phone" | "email">("phone");
+  const [showPwd, setShowPwd]       = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
 
-  // Splash Loading Progress
-  const [splashProgress, setSplashProgress] = useState(0);
-
-  // Form Fields
-  const [phone, setPhone] = useState("+256 772 100 200");
-  const [email, setEmail] = useState("james@sekajigo.co.ug");
-  const [password, setPassword] = useState("••••••••");
+  // Form fields
+  const [phone,    setPhone]    = useState("+256 772 100 200");
+  const [email,    setEmail]    = useState("james@sekajigo.co.ug");
+  const [password, setPassword] = useState("password123");
   const [fullName, setFullName] = useState("Sekajigo James");
   const [location, setLocation] = useState("Fort Portal, Kabarole");
   const [selectedRole, setSelectedRole] = useState<"owner" | "renter" | "agent" | "gov">("owner");
 
-  // OTP Verification
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
-  const [timer, setTimer] = useState(30);
+  // OTP
+  const [otpSent, setOtpSent]   = useState(false);
+  const [otpCode, setOtpCode]   = useState(["", "", "", "", "", ""]);
+  const [timer,   setTimer]     = useState(30);
 
-  // 1 & 3. Renter Identity, NIN & Guarantor Verification Fields
-  const [ninNumber, setNinNumber] = useState("CM98012345678A");
+  // Renter fields
+  const [ninNumber, setNinNumber]   = useState("CM98012345678A");
   const [villageLC1, setVillageLC1] = useState("Kicwamba Village, LC1 Zone 3");
-  const [idFrontUploaded, setIdFrontUploaded] = useState(true);
-  const [idBackUploaded, setIdBackUploaded] = useState(true);
-  const [selfieVerified, setSelfieVerified] = useState(true);
-  const [nextOfKinName, setNextOfKinName] = useState("Kembabazi Florence");
-  const [nextOfKinPhone, setNextOfKinPhone] = useState("+256 774 333 444");
-  const [lc1Name, setLc1Name] = useState("Chairman Mwesigwa Paul");
-  const [lc1Phone, setLc1Phone] = useState("+256 782 999 888");
+  const [nokName, setNokName]       = useState("Kembabazi Florence");
+  const [nokPhone, setNokPhone]     = useState("+256 774 333 444");
+  const [lc1Name, setLc1Name]       = useState("Chairman Mwesigwa Paul");
+  const [lc1Phone, setLc1Phone]     = useState("+256 782 999 888");
 
-  // Splash screen auto timer
+  // Splash auto-progress
+  const [progress, setProgress] = useState(0);
   useEffect(() => {
-    if (authState === "splash") {
-      const interval = setInterval(() => {
-        setSplashProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 150);
-      return () => clearInterval(interval);
-    }
+    if (authState !== "splash") return;
+    setProgress(0);
+    setSplashDone(false);
+    const iv = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) { clearInterval(iv); setSplashDone(true); return 100; }
+        return p + 2;
+      });
+    }, 30);
+    return () => clearInterval(iv);
   }, [authState]);
 
-  // OTP Countdown timer
+  // OTP countdown
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (otpSent && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    }
-    return () => clearInterval(interval);
+    if (!otpSent || timer <= 0) return;
+    const iv = setInterval(() => setTimer((t) => t - 1), 1000);
+    return () => clearInterval(iv);
   }, [otpSent, timer]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    onLoginSuccess({
-      name: fullName || "Sekajigo James",
-      role: selectedRole,
-      phone: phone || "+256 772 100 200",
-      location: location || "Fort Portal, Kabarole",
-    });
-  };
+  const login    = (e: React.FormEvent) => { e.preventDefault(); onLoginSuccess({ name: fullName, role: selectedRole, phone, location }); };
+  const register = (e: React.FormEvent) => { e.preventDefault(); onLoginSuccess({ name: fullName, role: selectedRole, phone, location }); };
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    onLoginSuccess({
-      name: fullName,
-      role: selectedRole,
-      phone,
-      location,
-    });
-  };
-
-  const handleSendOTP = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpSent(true);
-    setTimer(30);
-  };
-
-  const roles = [
-    {
-      key: "owner",
-      title: "Equipment Owner",
-      desc: "List your tractor, generator, truck or machinery and earn from idle time.",
-      icon: HardHat,
-    },
-    {
-      key: "renter",
-      title: "Renter",
-      desc: "Farmers, contractors and event planners who need equipment for a job.",
-      icon: Sprout,
-    },
-    {
-      key: "agent",
-      title: "Youth Agent",
-      desc: "Onboard offline owners in your region and coordinate logistics for commission.",
-      icon: Users,
-    },
-    {
-      key: "gov",
-      title: "Governance Officer",
-      desc: "Agricultural officers, engineers and community leaders overseeing listings.",
-      icon: Landmark,
-    },
-  ];
-
-  /* ---------------- 1. SPLASH SCREEN ---------------- */
+  /* ──────────────────────────────────────────────────────────────────────────
+     1. SPLASH SCREEN
+  ────────────────────────────────────────────────────────────────────────── */
   if (authState === "splash") {
     return (
-      <div className="min-h-screen bg-[#243B34] text-[#F1EDE3] flex flex-col items-center justify-between p-8 relative overflow-hidden select-none">
-        {/* Ambient Glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#E2A33B]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-screen bg-[#0E1F18] flex flex-col select-none overflow-hidden relative">
 
-        {/* Top Header info */}
-        <div className="w-full max-w-md flex justify-between items-center text-xs font-medium text-[#9AAAA3]">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#E2A33B] animate-pulse" />
-            Uganda Platform Active
-          </span>
-          <span>v1.0 MVP</span>
+        {/* Deep background radial glows */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-[#1A3029] opacity-60 blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#F5B038]/8 blur-[100px]" />
+          <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-[#F5B038]/5 blur-[80px]" />
         </div>
 
-        {/* Center Brand Identity */}
-        <div className="flex flex-col items-center text-center my-auto space-y-6 max-w-md">
-          {/* Logo with uploaded gear icon */}
-          <div className="relative group cursor-pointer" onClick={() => setAuthState("login")}>
-            <div className="p-4 bg-[#1E322C] border-2 border-[#E2A33B]/60 rounded-3xl shadow-2xl shadow-[#13211D]">
-              <GearLinkLogo size="xl" showText={false} animated={true} />
+        {/* Top status bar */}
+        <div className="relative z-10 flex items-center justify-between px-8 pt-8 text-[11px] font-semibold text-white/30">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Uganda Network Online
+          </div>
+          <span className="font-mono">v1.0 MVP</span>
+        </div>
+
+        {/* Centre hero */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center">
+
+          {/* Logo card */}
+          <div
+            className="cursor-pointer mb-8 group"
+            onClick={() => setAuthState("login")}
+          >
+            <div className="relative inline-flex">
+              <div className="w-28 h-28 rounded-[28px] bg-[#1A3029] border border-[#F5B038]/30 shadow-[0_0_60px_rgba(245,176,56,0.15)] flex items-center justify-center group-hover:border-[#F5B038]/60 group-hover:shadow-[0_0_80px_rgba(245,176,56,0.25)] transition-all duration-500">
+                <GearLinkLogo size="xl" showText={false} animated={false} />
+              </div>
+              {/* Glow ring */}
+              <div className="absolute inset-0 rounded-[28px] ring-2 ring-[#F5B038]/0 group-hover:ring-[#F5B038]/20 transition-all duration-500" />
+              {/* Verified badge */}
+              <div className="absolute -bottom-2 -right-2 flex items-center gap-1 bg-[#F5B038] text-[#241804] text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg">
+                <CheckCircle2 size={10} />
+                Verified
+              </div>
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-[#E2A33B] text-[#3A2A0D] text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
-              Official
+          </div>
+
+          {/* Brand name */}
+          <h1 className="gl-display text-6xl font-black text-white tracking-tight mb-1">
+            Gear<span className="text-[#F5B038]">Link</span>
+          </h1>
+          <p className="gl-body text-sm text-white/40 max-w-xs leading-relaxed mt-2 mb-10">
+            Uganda's rural machinery sharing platform — escrow-protected, agent-verified.
+          </p>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            {[
+              "🔒 2-Way Escrow",
+              "📍 GPS Verified",
+              "💳 Mobile Money",
+              "🤝 Youth Agents",
+            ].map((f) => (
+              <span
+                key={f}
+                className="gl-body text-[11px] font-semibold text-white/50 bg-white/6 border border-white/10 px-3 py-1.5 rounded-full"
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full max-w-xs mb-8">
+            <div className="h-0.5 bg-white/8 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#F5B038]/60 to-[#F5B038] rounded-full transition-all duration-75 ease-out"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
 
-          <div>
-            <h1 className="gl-display text-4xl font-extrabold tracking-wide text-white">
-              Gear<span className="text-[#E2A33B]">Link</span>
-            </h1>
-            <p className="gl-body text-sm text-[#9AAAA3] mt-2 leading-relaxed">
-              Uganda's Rural & Commercial Equipment Sharing & Escrow Governance Network
-            </p>
-          </div>
-
-          {/* Loading Progress Bar */}
-          <div className="w-full bg-[#1E322C] h-2 rounded-full overflow-hidden border border-[#E2A33B]/20">
-            <div
-              className="bg-[#E2A33B] h-full transition-all duration-300 ease-out"
-              style={{ width: `${splashProgress}%` }}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-[#9AAAA3]">
-            <ShieldCheck size={14} className="text-[#E2A33B]" />
-            <span>Secured with Escrow & Mobile Money Integration</span>
-          </div>
-
-          {/* Splash Actions */}
-          <div className="pt-4 w-full space-y-3">
+          {/* CTAs */}
+          <div className="w-full max-w-xs space-y-3">
             <button
               onClick={() => setAuthState("login")}
-              className="w-full bg-[#E2A33B] hover:bg-[#b97f22] text-[#3A2A0D] font-extrabold py-3.5 px-6 rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              className="gl-body w-full flex items-center justify-center gap-2.5 bg-[#F5B038] hover:bg-[#E2A33B] text-[#241804] font-extrabold py-4 px-6 rounded-2xl text-sm transition-all shadow-[0_8px_30px_rgba(245,176,56,0.35)] hover:shadow-[0_12px_40px_rgba(245,176,56,0.45)] hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Get Started</span>
+              Get Started
               <ArrowRight size={16} />
             </button>
             <button
               onClick={() => setAuthState("register")}
-              className="w-full bg-transparent hover:bg-white/5 border border-[#F1EDE3]/20 text-[#F1EDE3] font-semibold py-3 px-6 rounded-xl text-sm transition-all cursor-pointer"
+              className="gl-body w-full flex items-center justify-center gap-2 bg-white/6 hover:bg-white/10 border border-white/12 hover:border-white/20 text-white/70 hover:text-white font-semibold py-3.5 px-6 rounded-2xl text-sm transition-all"
             >
               Create Account
             </button>
@@ -205,544 +200,413 @@ export const AuthView: React.FC<AuthViewProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-[#9AAAA3]">
-          Powered by GearLink Uganda Ltd · Fort Portal, Kasese & Kampala
+        <div className="relative z-10 pb-8 text-center text-[11px] text-white/20 gl-body">
+          GearLink Uganda Ltd · Fort Portal · Kasese · Kampala
         </div>
       </div>
     );
   }
 
-  /* ---------------- 2. LOGIN PAGE ---------------- */
+  /* ──────────────────────────────────────────────────────────────────────────
+     2. LOGIN
+  ────────────────────────────────────────────────────────────────────────── */
   if (authState === "login") {
     return (
-      <div className="min-h-screen bg-[#F1EDE3] text-[#1B1B18] flex items-center justify-center p-4 sm:p-6">
-        <div className="bg-white border border-[#DAD4C4] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <GearLinkLogo size="md" showText={true} darkText={true} />
-            <button
-              onClick={() => setAuthState("splash")}
-              className="text-xs text-[#6B6A62] hover:text-[#1B1B18] flex items-center gap-1 cursor-pointer"
-            >
-              <ArrowLeft size={14} /> Back
-            </button>
-          </div>
+      <div className="min-h-screen bg-[#F0EDE4] flex items-center justify-center p-4">
+        <div className="w-full max-w-md animate-scale-in">
 
-          <h2 className="gl-display text-2xl font-bold text-[#1B1B18]">Welcome Back</h2>
-          <p className="gl-body text-xs text-[#6B6A62] mt-1 mb-6">
-            Log in to manage equipment rentals, check bookings, or access escrow payments.
-          </p>
+          {/* Card */}
+          <div className="bg-white rounded-3xl shadow-xl border border-[#E2DCD0] overflow-hidden">
 
-          {/* Login Method Toggle Tabs */}
-          <div className="flex bg-[#F1EDE3] p-1 rounded-xl mb-5 border border-[#DAD4C4]">
-            <button
-              onClick={() => setLoginMethod("phone")}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                loginMethod === "phone"
-                  ? "bg-[#243B34] text-white shadow-sm"
-                  : "text-[#6B6A62] hover:text-[#1B1B18]"
-              }`}
-            >
-              <Smartphone size={14} /> Mobile Money Phone
-            </button>
-            <button
-              onClick={() => setLoginMethod("email")}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                loginMethod === "email"
-                  ? "bg-[#243B34] text-white shadow-sm"
-                  : "text-[#6B6A62] hover:text-[#1B1B18]"
-              }`}
-            >
-              <Mail size={14} /> Email Address
-            </button>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            {loginMethod === "phone" ? (
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Mobile Money Phone Number (Uganda)
-                </label>
-                <div className="relative">
-                  <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6A62]" />
-                  <input
-                    type="text"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+256 772 000 000"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6A62]" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.co.ug"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-semibold text-[#6B6A62]">Password</label>
-                <button
-                  type="button"
-                  onClick={() => setAuthState("forgot")}
-                  className="text-xs font-semibold text-[#B97F22] hover:underline cursor-pointer"
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6A62]" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                />
-              </div>
+            {/* Dark header */}
+            <div className="bg-[#1A3029] px-8 py-7">
+              <GearLinkLogo size="md" showText={true} />
+              <h2 className="gl-display font-extrabold text-2xl text-white mt-5 mb-1">
+                Welcome back
+              </h2>
+              <p className="gl-body text-sm text-white/50">
+                Sign in to manage rentals, bookings & escrow.
+              </p>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-[#E2A33B] hover:bg-[#b97f22] text-[#3A2A0D] font-bold py-3 rounded-xl text-sm transition-all shadow-md cursor-pointer mt-2"
-            >
-              Sign In to GearLink
-            </button>
-          </form>
-
-          {/* Quick Demo Login Shortcuts */}
-          <div className="mt-6 pt-5 border-t border-[#DAD4C4]">
-            <p className="text-[11px] font-semibold text-[#6B6A62] text-center mb-2.5">
-              QUICK DEMO ACCESSS (ONE-CLICK LOGIN):
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("owner");
-                  setFullName("Sekajigo James (Owner)");
-                  onLoginSuccess({ name: "Sekajigo James", role: "owner", phone, location });
-                }}
-                className="text-xs p-2 bg-[#F1EDE3] border border-[#DAD4C4] rounded-lg hover:border-[#243B34] font-medium text-left flex items-center gap-1.5 cursor-pointer"
-              >
-                <HardHat size={14} className="text-[#C6821F]" />
-                <span>Owner Portal</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("renter");
-                  setFullName("Turyahikayo Grace (Renter)");
-                  onLoginSuccess({ name: "Turyahikayo Grace", role: "renter", phone, location });
-                }}
-                className="text-xs p-2 bg-[#F1EDE3] border border-[#DAD4C4] rounded-lg hover:border-[#243B34] font-medium text-left flex items-center gap-1.5 cursor-pointer"
-              >
-                <Sprout size={14} className="text-[#5C7A32]" />
-                <span>Renter Portal</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("agent");
-                  setFullName("Byaruhanga Moses (Agent)");
-                  onLoginSuccess({ name: "Byaruhanga Moses", role: "agent", phone, location });
-                }}
-                className="text-xs p-2 bg-[#F1EDE3] border border-[#DAD4C4] rounded-lg hover:border-[#243B34] font-medium text-left flex items-center gap-1.5 cursor-pointer"
-              >
-                <Users size={14} className="text-[#2A6E85]" />
-                <span>Youth Agent</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("gov");
-                  setFullName("District Engineer (Gov)");
-                  onLoginSuccess({ name: "District Governance", role: "gov", phone, location });
-                }}
-                className="text-xs p-2 bg-[#F1EDE3] border border-[#DAD4C4] rounded-lg hover:border-[#243B34] font-medium text-left flex items-center gap-1.5 cursor-pointer"
-              >
-                <Landmark size={14} className="text-[#4D5087]" />
-                <span>Governance</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Footer Register Link */}
-          <div className="mt-6 text-center text-xs text-[#6B6A62]">
-            Don't have a GearLink account yet?{" "}
-            <button
-              onClick={() => setAuthState("register")}
-              className="font-bold text-[#243B34] hover:underline cursor-pointer"
-            >
-              Create Account
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---------------- 3. REGISTER & ROLE SELECTION ---------------- */
-  if (authState === "register") {
-    return (
-      <div className="min-h-screen bg-[#F1EDE3] text-[#1B1B18] flex items-center justify-center p-4 sm:p-6">
-        <div className="bg-white border border-[#DAD4C4] rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <GearLinkLogo size="md" showText={true} darkText={true} />
-            <button
-              onClick={() => setAuthState("login")}
-              className="text-xs text-[#6B6A62] hover:text-[#1B1B18] flex items-center gap-1 cursor-pointer"
-            >
-              <ArrowLeft size={14} /> Back to Login
-            </button>
-          </div>
-
-          <h2 className="gl-display text-2xl font-bold text-[#1B1B18]">Join GearLink</h2>
-          <p className="gl-body text-xs text-[#6B6A62] mt-1 mb-5">
-            Select your primary role. Note: A single account can own, rent, or manage logistics!
-          </p>
-
-          <form onSubmit={handleRegister} className="space-y-4">
-            {/* Role Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              {roles.map((r) => {
-                const active = selectedRole === r.key;
-                const Icon = r.icon;
-                return (
-                  <div
-                    key={r.key}
-                    onClick={() => setSelectedRole(r.key as any)}
-                    className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
-                      active
-                        ? "border-[#E2A33B] bg-[#F1EDE3]/70 ring-2 ring-[#E2A33B]/40 shadow-sm"
-                        : "border-[#DAD4C4] bg-white hover:border-[#243B34]"
+            <div className="px-8 py-7 space-y-5">
+              {/* Login method toggle */}
+              <div className="flex bg-[#F7F4EF] p-1 rounded-xl border border-[#E2DCD0]">
+                {(["phone","email"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setLoginMethod(m)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                      loginMethod === m
+                        ? "bg-[#1A3029] text-white shadow-sm"
+                        : "text-[#9B9A93] hover:text-[#1B1B18]"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#243B34] flex items-center justify-center text-white">
-                        <Icon size={16} />
-                      </div>
-                      {active && <CheckCircle2 size={16} className="text-[#E2A33B]" />}
-                    </div>
-                    <div className="gl-display font-bold text-sm text-[#1B1B18]">{r.title}</div>
-                    <div className="text-[11px] text-[#6B6A62] leading-tight mt-1">{r.desc}</div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Registration Input Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Byaruhanga Moses"
-                  className="w-full px-3 py-2 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                />
+                    {m === "phone" ? <Smartphone size={13} /> : <Mail size={13} />}
+                    {m === "phone" ? "Phone" : "Email"}
+                  </button>
+                ))}
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Mobile Money Phone Number
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+256 772 000 000"
-                  className="w-full px-3 py-2 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                />
-              </div>
-            </div>
+              <form onSubmit={login} className="space-y-4">
+                {loginMethod === "phone" ? (
+                  <Field label="Mobile Money Phone" icon={Phone}>
+                    <input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+256 772 000 000" className={INPUT} />
+                  </Field>
+                ) : (
+                  <Field label="Email Address" icon={Mail}>
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.co.ug" className={INPUT} />
+                  </Field>
+                )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="moses@gearlink.ug"
-                  className="w-full px-3 py-2 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                />
-              </div>
+                <Field label="Password" icon={Lock}>
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={INPUT + " pr-11"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-3.5 text-[#9B9A93] hover:text-[#1B1B18] transition-colors"
+                  >
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </Field>
 
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Location / District
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Fort Portal, Kabarole"
-                  className="w-full px-3 py-2 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                />
-              </div>
-            </div>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => setAuthState("forgot")}
+                    className="gl-body text-xs font-semibold text-[#B97F22] hover:text-[#8E5F12] transition-colors">
+                    Forgot password?
+                  </button>
+                </div>
 
-            {/* Renter Trust Verification Section (Only shown when selectedRole === 'renter') */}
-            {selectedRole === "renter" && (
-              <div className="p-4 bg-[#F1EDE3]/70 border border-[#E2A33B]/40 rounded-2xl space-y-3.5 my-3">
-                <div className="flex items-center justify-between border-b border-[#DAD4C4] pb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#3A2A0D]">
-                    <ShieldCheck size={16} className="text-[#B97F22]" />
-                    <span>1. Renter Identity & Social Accountability Verification</span>
-                  </div>
-                  <span className="text-[10px] bg-[#E2A33B] text-[#3A2A0D] px-2 py-0.5 rounded-full font-bold">
-                    Escrow Stake Protection
+                <button type="submit"
+                  className="gl-body w-full bg-[#F5B038] hover:bg-[#E2A33B] text-[#241804] font-extrabold py-3.5 rounded-xl text-sm transition-all shadow-[0_4px_16px_rgba(245,176,56,0.30)] hover:shadow-[0_6px_24px_rgba(245,176,56,0.40)] flex items-center justify-center gap-2">
+                  Sign In to GearLink <ArrowRight size={15} />
+                </button>
+              </form>
+
+              {/* Demo quick access */}
+              <div className="pt-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1 h-px bg-[#E2DCD0]" />
+                  <span className="gl-body text-[11px] font-semibold text-[#9B9A93] uppercase tracking-wide">
+                    Quick Demo
                   </span>
+                  <div className="flex-1 h-px bg-[#E2DCD0]" />
                 </div>
-
-                {/* NIN & Village LC1 */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                      National ID Number (NIN)
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={ninNumber}
-                      onChange={(e) => setNinNumber(e.target.value)}
-                      placeholder="e.g. CM98012345678A"
-                      className="w-full px-3 py-2 text-sm bg-white border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34] font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                      Village / LC1 Location
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={villageLC1}
-                      onChange={(e) => setVillageLC1(e.target.value)}
-                      placeholder="e.g. Kicwamba Village, LC1 Zone 3"
-                      className="w-full px-3 py-2 text-sm bg-white border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-                    />
-                  </div>
-                </div>
-
-                {/* ID Photo Uploads & Selfie Simulation */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
-                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">National ID Front</div>
-                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> Front Uploaded
-                    </span>
-                  </div>
-                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
-                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">National ID Back</div>
-                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> Back Uploaded
-                    </span>
-                  </div>
-                  <div className="p-2 bg-white border border-[#DAD4C4] rounded-xl text-center">
-                    <div className="text-[10px] font-bold text-[#6B6A62] mb-1">Selfie Match</div>
-                    <span className="text-xs font-semibold text-[#5C7A32] flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> Verified
-                    </span>
-                  </div>
-                </div>
-
-                {/* Next of Kin & LC1 Reference */}
-                <div className="border-t border-[#DAD4C4] pt-2">
-                  <div className="text-[11px] font-bold text-[#243B34] mb-2 flex items-center gap-1.5">
-                    <Users size={13} />
-                    <span>3. Social Accountability & Guarantor Contact</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-[#6B6A62] block mb-0.5">
-                        Next of Kin / Guarantor Name & Phone
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={nextOfKinName + " (" + nextOfKinPhone + ")"}
-                        onChange={(e) => setNextOfKinName(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#DAD4C4] rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-[#6B6A62] block mb-0.5">
-                        LC1 Chairperson Reference
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={lc1Name + " (" + lc1Phone + ")"}
-                        onChange={(e) => setLc1Name(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#DAD4C4] rounded-lg"
-                      />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {DEMO_ROLES.map((d) => (
+                    <button
+                      key={d.role}
+                      type="button"
+                      onClick={() => onLoginSuccess({ name: d.name, role: d.role, phone, location })}
+                      className={`gl-body flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all ${d.bg}`}
+                    >
+                      <d.icon size={14} className={d.color} />
+                      <span className="text-[#1B1B18]">{d.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
 
-            <div>
-              <label className="text-xs font-semibold text-[#6B6A62] block mb-1">Create Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none focus:border-[#243B34]"
-              />
+              {/* Footer */}
+              <p className="gl-body text-center text-xs text-[#9B9A93]">
+                No account?{" "}
+                <button onClick={() => setAuthState("register")}
+                  className="font-bold text-[#1A3029] hover:text-[#B97F22] transition-colors">
+                  Create one free
+                </button>
+              </p>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#243B34] hover:bg-[#1E322C] text-[#F1EDE3] font-bold py-3 rounded-xl text-sm transition-all shadow-md cursor-pointer mt-3"
-            >
-              Complete Registration & Enter GearLink
-            </button>
-          </form>
-
-          <div className="mt-5 text-center text-xs text-[#6B6A62]">
-            Already registered?{" "}
-            <button
-              onClick={() => setAuthState("login")}
-              className="font-bold text-[#243B34] hover:underline cursor-pointer"
-            >
-              Log In
-            </button>
           </div>
+
+          {/* Back to splash */}
+          <button
+            onClick={() => setAuthState("splash")}
+            className="gl-body mt-4 mx-auto flex items-center gap-1.5 text-xs font-semibold text-[#9B9A93] hover:text-[#1B1B18] transition-colors"
+          >
+            <ArrowLeft size={13} /> Back to home
+          </button>
         </div>
       </div>
     );
   }
 
-  /* ---------------- 4. FORGOT PASSWORD / OTP ---------------- */
-  return (
-    <div className="min-h-screen bg-[#F1EDE3] text-[#1B1B18] flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white border border-[#DAD4C4] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <GearLinkLogo size="md" showText={true} darkText={true} />
-          <button
-            onClick={() => setAuthState("login")}
-            className="text-xs text-[#6B6A62] hover:text-[#1B1B18] flex items-center gap-1 cursor-pointer"
-          >
-            <ArrowLeft size={14} /> Back
-          </button>
-        </div>
+  /* ──────────────────────────────────────────────────────────────────────────
+     3. REGISTER
+  ────────────────────────────────────────────────────────────────────────── */
+  if (authState === "register") {
+    return (
+      <div className="min-h-screen bg-[#F0EDE4] flex items-center justify-center p-4 py-8">
+        <div className="w-full max-w-xl animate-scale-in">
+          <div className="bg-white rounded-3xl shadow-xl border border-[#E2DCD0] overflow-hidden">
 
-        <h2 className="gl-display text-2xl font-bold text-[#1B1B18]">Reset Password</h2>
-        <p className="gl-body text-xs text-[#6B6A62] mt-1 mb-6">
-          {!otpSent
-            ? "Enter your registered phone number to receive an SMS OTP code."
-            : `We sent a 6-digit SMS verification code to ${phone}.`}
-        </p>
+            {/* Dark header */}
+            <div className="bg-[#1A3029] px-8 py-7">
+              <GearLinkLogo size="md" showText={true} />
+              <h2 className="gl-display font-extrabold text-2xl text-white mt-5 mb-1">
+                Join GearLink
+              </h2>
+              <p className="gl-body text-sm text-white/50">
+                Select your role and create your account in minutes.
+              </p>
+            </div>
 
-        {!otpSent ? (
-          <form onSubmit={handleSendOTP} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                Phone Number (Mobile Money)
-              </label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6A62]" />
-                <input
-                  type="text"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+256 772 000 000"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#F1EDE3]/50 border border-[#DAD4C4] rounded-xl focus:outline-none"
-                />
+            <div className="px-8 py-7 space-y-6">
+              {/* Role selector */}
+              <div>
+                <div className="section-label mb-3">Select your role</div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {ROLES.map((r) => {
+                    const active = selectedRole === r.key;
+                    return (
+                      <button
+                        key={r.key}
+                        type="button"
+                        onClick={() => setSelectedRole(r.key as typeof selectedRole)}
+                        className={`text-left p-4 rounded-2xl border-2 transition-all ${
+                          active
+                            ? "border-[#1A3029] bg-[#F0EDE4]"
+                            : "border-[#E2DCD0] bg-white hover:border-[#B0A898]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center"
+                            style={{ background: r.color + "18" }}
+                          >
+                            <r.icon size={17} style={{ color: r.color }} />
+                          </div>
+                          {active && <CheckCircle2 size={16} className="text-[#1A3029]" />}
+                        </div>
+                        <div className="gl-display font-bold text-[13px] text-[#1B1B18]">{r.title}</div>
+                        <div className="gl-body text-[11px] text-[#9B9A93] mt-0.5 leading-snug">{r.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-[#E2A33B] hover:bg-[#b97f22] text-[#3A2A0D] font-bold py-3 rounded-xl text-sm transition-all shadow-md cursor-pointer"
-            >
-              Send SMS Verification Code
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-5">
-            <div>
-              <label className="text-xs font-semibold text-[#6B6A62] block mb-2 text-center">
-                Enter 6-digit OTP Code
-              </label>
-              <div className="flex justify-between gap-1.5">
-                {[0, 1, 2, 3, 4, 5].map((idx) => (
-                  <input
-                    key={idx}
-                    type="text"
-                    maxLength={1}
-                    value={otpCode[idx]}
-                    onChange={(e) => {
-                      const next = [...otpCode];
-                      next[idx] = e.target.value;
-                      setOtpCode(next);
-                    }}
-                    className="w-11 h-12 text-center font-extrabold text-lg border border-[#DAD4C4] rounded-xl bg-[#F1EDE3]/50 focus:border-[#243B34] focus:outline-none"
-                  />
-                ))}
-              </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-semibold text-[#6B6A62] block mb-1">New Password</label>
-              <input
-                type="password"
-                required
-                placeholder="Enter new password"
-                className="w-full px-3 py-2.5 text-sm border border-[#DAD4C4] rounded-xl bg-[#F1EDE3]/50"
-              />
-            </div>
+              <form onSubmit={register} className="space-y-4">
+                {/* Basic info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Full Name" icon={Users}>
+                    <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Byaruhanga Moses" className={INPUT} />
+                  </Field>
+                  <Field label="Mobile Money Phone" icon={Phone}>
+                    <input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+256 772 000 000" className={INPUT} />
+                  </Field>
+                  <Field label="Email Address" icon={Mail}>
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.co.ug" className={INPUT} />
+                  </Field>
+                  <Field label="Location / District" icon={MapPin}>
+                    <input type="text" required value={location} onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Fort Portal, Kabarole" className={INPUT} />
+                  </Field>
+                </div>
 
-            <button
-              onClick={() => {
-                setAuthState("login");
-              }}
-              className="w-full bg-[#243B34] hover:bg-[#1E322C] text-[#F1EDE3] font-bold py-3 rounded-xl text-sm transition-all shadow-md cursor-pointer"
-            >
-              Verify OTP & Reset Password
-            </button>
+                {/* Renter identity verification */}
+                {selectedRole === "renter" && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center gap-2.5 mb-1">
+                      <ShieldCheck size={16} className="text-amber-600 flex-shrink-0" />
+                      <div>
+                        <div className="gl-body text-xs font-extrabold text-amber-900 uppercase tracking-wide">
+                          Identity Verification Required
+                        </div>
+                        <div className="text-[11px] text-amber-700 mt-0.5">
+                          Escrow protection requires verified renters.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="gl-body text-[11px] font-bold text-[#6B6A62] block mb-1 uppercase tracking-wide">National ID (NIN)</label>
+                        <input type="text" required value={ninNumber} onChange={(e) => setNinNumber(e.target.value)}
+                          placeholder="CM98012345678A"
+                          className="gl-body w-full px-3.5 py-2.5 text-xs bg-white border border-amber-200 rounded-xl font-mono text-[#1B1B18] focus:outline-none focus:border-[#1A3029]" />
+                      </div>
+                      <div>
+                        <label className="gl-body text-[11px] font-bold text-[#6B6A62] block mb-1 uppercase tracking-wide">Village / LC1 Zone</label>
+                        <input type="text" required value={villageLC1} onChange={(e) => setVillageLC1(e.target.value)}
+                          placeholder="Kicwamba Village, LC1 Zone 3"
+                          className="gl-body w-full px-3.5 py-2.5 text-xs bg-white border border-amber-200 rounded-xl text-[#1B1B18] focus:outline-none focus:border-[#1A3029]" />
+                      </div>
+                    </div>
+                    {/* ID upload simulation */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {[["ID Front","✓ Uploaded"],["ID Back","✓ Uploaded"],["Selfie","✓ Matched"]].map(([t,s]) => (
+                        <div key={t} className="bg-white border border-amber-200 rounded-xl p-2.5 text-center">
+                          <div className="text-[10px] font-bold text-[#6B6A62] mb-1">{t}</div>
+                          <div className="text-[11px] font-semibold text-emerald-600">{s}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
+                      <div>
+                        <label className="gl-body text-[11px] font-bold text-[#6B6A62] block mb-1">Guarantor Name & Phone</label>
+                        <input type="text" required value={`${nokName} (${nokPhone})`}
+                          onChange={(e) => setNokName(e.target.value)}
+                          className="gl-body w-full px-3 py-2 text-xs bg-white border border-amber-200 rounded-xl text-[#1B1B18] focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="gl-body text-[11px] font-bold text-[#6B6A62] block mb-1">LC1 Chairperson Reference</label>
+                        <input type="text" required value={`${lc1Name} (${lc1Phone})`}
+                          onChange={(e) => setLc1Name(e.target.value)}
+                          className="gl-body w-full px-3 py-2 text-xs bg-white border border-amber-200 rounded-xl text-[#1B1B18] focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            <div className="text-center text-xs text-[#6B6A62] pt-2">
-              {timer > 0 ? (
-                <span>Resend OTP code in {timer}s</span>
-              ) : (
-                <button
-                  onClick={() => setTimer(30)}
-                  className="text-[#B97F22] font-bold hover:underline flex items-center justify-center gap-1 mx-auto"
-                >
-                  <RefreshCw size={12} /> Resend OTP Code
+                <Field label="Create Password" icon={Lock}>
+                  <input type={showPwd ? "text" : "password"} required value={password}
+                    onChange={(e) => setPassword(e.target.value)} className={INPUT + " pr-11"} />
+                  <button type="button" onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-3.5 text-[#9B9A93] hover:text-[#1B1B18] transition-colors">
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </Field>
+
+                <button type="submit"
+                  className="gl-body w-full bg-[#1A3029] hover:bg-[#243B34] text-white font-extrabold py-3.5 rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                  Create Account & Enter GearLink <ArrowRight size={15} />
                 </button>
-              )}
+              </form>
+
+              <p className="gl-body text-center text-xs text-[#9B9A93]">
+                Already registered?{" "}
+                <button onClick={() => setAuthState("login")}
+                  className="font-bold text-[#1A3029] hover:text-[#B97F22] transition-colors">
+                  Sign in
+                </button>
+              </p>
             </div>
           </div>
-        )}
+
+          <button onClick={() => setAuthState("splash")}
+            className="gl-body mt-4 mx-auto flex items-center gap-1.5 text-xs font-semibold text-[#9B9A93] hover:text-[#1B1B18] transition-colors">
+            <ArrowLeft size={13} /> Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────────
+     4. FORGOT PASSWORD / OTP
+  ────────────────────────────────────────────────────────────────────────── */
+  return (
+    <div className="min-h-screen bg-[#F0EDE4] flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-scale-in">
+        <div className="bg-white rounded-3xl shadow-xl border border-[#E2DCD0] overflow-hidden">
+
+          <div className="bg-[#1A3029] px-8 py-7">
+            <GearLinkLogo size="md" showText={true} />
+            <h2 className="gl-display font-extrabold text-2xl text-white mt-5 mb-1">
+              {otpSent ? "Verify & Reset" : "Reset Password"}
+            </h2>
+            <p className="gl-body text-sm text-white/50">
+              {otpSent
+                ? `A 6-digit SMS code was sent to ${phone}.`
+                : "Enter your phone number to receive a reset code."}
+            </p>
+          </div>
+
+          <div className="px-8 py-7 space-y-5">
+            {!otpSent ? (
+              <form onSubmit={(e) => { e.preventDefault(); setOtpSent(true); setTimer(30); }} className="space-y-4">
+                <Field label="Mobile Money Phone" icon={Phone}>
+                  <input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+256 772 000 000" className={INPUT} />
+                </Field>
+                <button type="submit"
+                  className="gl-body w-full bg-[#F5B038] hover:bg-[#E2A33B] text-[#241804] font-extrabold py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                  Send Verification Code <ArrowRight size={15} />
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-5">
+                {/* OTP boxes */}
+                <div>
+                  <div className="gl-body text-xs font-bold text-[#6B6A62] uppercase tracking-wide mb-3">
+                    Enter 6-digit OTP
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    {[0,1,2,3,4,5].map((idx) => (
+                      <input
+                        key={idx}
+                        type="text"
+                        maxLength={1}
+                        value={otpCode[idx]}
+                        onChange={(e) => {
+                          const next = [...otpCode];
+                          next[idx] = e.target.value;
+                          setOtpCode(next);
+                          // auto-focus next
+                          if (e.target.value && idx < 5) {
+                            const inputs = e.target.parentElement?.querySelectorAll("input");
+                            inputs?.[idx + 1]?.focus();
+                          }
+                        }}
+                        className="gl-body flex-1 h-13 text-center font-extrabold text-xl bg-[#F7F4EF] border-2 border-[#E2DCD0] rounded-xl focus:border-[#1A3029] focus:outline-none transition-colors"
+                        style={{ height: 52 }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <Field label="New Password" icon={Lock}>
+                  <input type={showPwd ? "text" : "password"} required placeholder="Enter new password"
+                    className={INPUT + " pr-11"} />
+                  <button type="button" onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-3.5 text-[#9B9A93] hover:text-[#1B1B18] transition-colors">
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </Field>
+
+                <button
+                  onClick={() => setAuthState("login")}
+                  className="gl-body w-full bg-[#1A3029] hover:bg-[#243B34] text-white font-extrabold py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                  Verify & Reset Password <ArrowRight size={15} />
+                </button>
+
+                <div className="text-center text-xs text-[#9B9A93] gl-body">
+                  {timer > 0 ? (
+                    <span>Resend code in <strong className="text-[#1B1B18]">{timer}s</strong></span>
+                  ) : (
+                    <button onClick={() => { setTimer(30); }}
+                      className="font-bold text-[#B97F22] hover:text-[#8E5F12] flex items-center justify-center gap-1 mx-auto transition-colors">
+                      <RefreshCw size={12} /> Resend OTP
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <p className="gl-body text-center text-xs text-[#9B9A93] pt-1">
+              Remember your password?{" "}
+              <button onClick={() => setAuthState("login")}
+                className="font-bold text-[#1A3029] hover:text-[#B97F22] transition-colors">
+                Sign in
+              </button>
+            </p>
+          </div>
+        </div>
+
+        <button onClick={() => setAuthState("splash")}
+          className="gl-body mt-4 mx-auto flex items-center gap-1.5 text-xs font-semibold text-[#9B9A93] hover:text-[#1B1B18] transition-colors">
+          <ArrowLeft size={13} /> Back to home
+        </button>
       </div>
     </div>
   );
