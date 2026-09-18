@@ -1,367 +1,350 @@
 "use client";
 
 import React, { useState } from "react";
-import { LayoutGrid, ClipboardList, TrendingUp, Star, Plus, CheckCircle2, X, LogOut } from "lucide-react";
-import { COLORS, CATEGORIES, catByName, money } from "@/lib/equipment-data";
-import { StatTile, PageHeader, GearButton } from "@/components/ui/gear-primitives";
-import type { EquipmentItem } from "@/lib/types";
+import { LayoutGrid, ClipboardList, TrendingUp, Star, Plus, CheckCircle2, X, LogOut, Clock, Phone, MapPin, Calendar } from "lucide-react";
+import { CATEGORIES, catByName, money } from "@/lib/equipment-data";
+import { StatTile, PageHeader } from "@/components/ui/gear-primitives";
+import type { EquipmentItem, BookingRequest } from "@/lib/types";
 
-interface OwnerDashboardProps {
+interface Props {
   equipmentList: EquipmentItem[];
-  onAddEquipment: (e: EquipmentItem) => void;
+  onAddEquipment: (e:EquipmentItem) => void;
+  bookingRequests?: BookingRequest[];
   onSignOut?: () => void;
 }
 
-export function OwnerDashboard({ equipmentList, onAddEquipment, onSignOut }: OwnerDashboardProps) {
-  const [tab, setTab] = useState("listings");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
+export function OwnerDashboard({ equipmentList, onAddEquipment, bookingRequests=[], onSignOut }: Props) {
+  const [tab, setTab]                 = useState("listings");
+  const [showModal, setShowModal]     = useState(false);
+  const [successMsg, setSuccessMsg]   = useState("");
+  const [eqName, setEqName]           = useState("");
+  const [eqCat, setEqCat]             = useState("Agriculture");
+  const [eqLoc, setEqLoc]             = useState("Fort Portal");
+  const [eqPrice, setEqPrice]         = useState<number|string>(150000);
+  const [eqDesc, setEqDesc]           = useState("");
+  const [preview, setPreview]         = useState<string|null>(null);
 
-  // Form state
-  const [eqName, setEqName] = useState("");
-  const [eqCat, setEqCat] = useState("Agriculture");
-  const [eqLoc, setEqLoc] = useState("Fort Portal");
-  const [eqPrice, setEqPrice] = useState<number | string>(150000);
-  const [eqDescription, setEqDescription] = useState("");
-  const [eqImagePreview, setEqImagePreview] = useState<string | null>(null);
+  // Booking request actions
+  const [requests, setRequests]       = useState<BookingRequest[]>(bookingRequests);
+  React.useEffect(() => { setRequests(bookingRequests); }, [bookingRequests]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setEqImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
+  const approveRequest = (id:string) => setRequests(prev=>prev.map(r=>r.id===id?{...r,status:"Approved"}:r));
+  const rejectRequest  = (id:string) => setRequests(prev=>prev.map(r=>r.id===id?{...r,status:"Rejected"}:r));
+
+  const handleImg = (e:React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if(f){ const r=new FileReader(); r.onloadend=()=>setPreview(r.result as string); r.readAsDataURL(f); }
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = (e:React.FormEvent) => {
     e.preventDefault();
-    if (!eqName) return;
-    const newItem: EquipmentItem = {
-      id: Date.now(),
-      name: eqName,
-      cat: eqCat,
-      loc: eqLoc || "Fort Portal",
-      price: Number(eqPrice) || 150000,
-      owner: "Sekajigo Equipment Ltd",
-      rating: 5.0,
-      reviews: 0,
-      status: "Available",
-    };
-    onAddEquipment(newItem);
-    setShowAddModal(false);
-    setSuccessMsg(`"${eqName}" has been successfully published to the GearLink Marketplace!`);
-    // Reset form
-    setEqName("");
-    setEqLoc("Fort Portal");
-    setEqPrice(150000);
-    setEqDescription("");
-    setEqImagePreview(null);
-    setTimeout(() => setSuccessMsg(""), 5000);
+    if(!eqName) return;
+    onAddEquipment({ id:Date.now(), name:eqName, cat:eqCat, loc:eqLoc||"Fort Portal", price:Number(eqPrice)||150000, owner:"Sekajigo Equipment Ltd", rating:5.0, reviews:0, status:"Available" });
+    setShowModal(false);
+    setSuccessMsg(`"${eqName}" published to the GearLink Marketplace!`);
+    setEqName(""); setEqLoc("Fort Portal"); setEqPrice(150000); setEqDesc(""); setPreview(null);
+    setTimeout(()=>setSuccessMsg(""), 5000);
   };
+
+  const TABS = [["listings","My Listings"],["requests",`Booking Requests${requests.length>0?` (${requests.length})`:""}` ],["earnings","Earnings"]];
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Owner dashboard"
-        title="Manage your equipment"
+    <div className="animate-fade-up">
+      <PageHeader eyebrow="Owner Dashboard" title="Manage Your Equipment"
         subtitle="Sekajigo Equipment Ltd · Fort Portal"
         action={
-          <div className="flex items-center gap-2">
-            <GearButton variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>
+          <div className="flex items-center gap-3">
+            <button onClick={()=>setShowModal(true)}
+              className="btn-primary flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold">
+              <Plus size={16} />
               List New Equipment
-            </GearButton>
-            <button
-              onClick={onSignOut}
-              title="Sign Out"
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#E2DCD0] bg-white text-sm font-semibold text-[#6B6A62] hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition-all shadow-sm gl-body"
-            >
-              <LogOut size={15} /> Sign Out
+            </button>
+            <button onClick={onSignOut}
+              className="btn-secondary flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all">
+              <LogOut size={15}/> Sign Out
             </button>
           </div>
-        }
-      />
+        }/>
 
       {successMsg && (
-        <div className="mb-6 p-4 bg-[#E9F1E1] border border-[#5C7A32]/40 rounded-xl text-[#3E5E22] flex items-center justify-between text-sm font-semibold shadow-sm">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-[#5C7A32]" />
-            <span>{successMsg}</span>
-          </div>
-          <button onClick={() => setSuccessMsg("")} className="text-[#3E5E22] hover:opacity-75">
-            <X size={16} />
-          </button>
+        <div className="mb-6 p-4 rounded-xl flex items-center justify-between text-sm font-semibold animate-slide-right professional-badge"
+          style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)", color:"#059669" }}>
+          <div className="flex items-center gap-2"><CheckCircle2 size={17} style={{ color:"#10B981" }}/>{successMsg}</div>
+          <button onClick={()=>setSuccessMsg("")}><X size={15}/></button>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-        <StatTile label="Active listings" value={equipmentList.length.toString()} icon={LayoutGrid} />
-        <StatTile label="Pending requests" value="2" icon={ClipboardList} accent={COLORS.signalDark} />
-        <StatTile label="Earnings this month" value="UGX 1.4M" icon={TrendingUp} />
-        <StatTile label="Average rating" value="4.7" icon={Star} />
+      {/* Stats */}
+      <div className="flex gap-4 mb-7 flex-wrap stagger">
+        <StatTile label="Active Listings" value={equipmentList.length.toString()} icon={LayoutGrid} variant="premium"/>
+        <StatTile label="Booking Requests" value={requests.length.toString()} icon={ClipboardList} accent="var(--c-a)" trend={requests.length>0?"+"+requests.length:undefined} variant="gradient"/>
+        <StatTile label="Earnings This Month" value="UGX 1.4M" icon={TrendingUp} accent="var(--c-ok)" variant="premium"/>
+        <StatTile label="Average Rating" value="4.7" icon={Star} accent="var(--c-warn)" variant="gradient"/>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: `1px solid ${COLORS.line}` }}>
-        {[
-          ["listings", "My listings"],
-          ["requests", "Booking requests"],
-          ["earnings", "Earnings"],
-        ].map(([k, l]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className="gl-body cursor-pointer"
+      <div className="flex gap-2 mb-6 p-1.5 rounded-xl w-fit executive-card">
+        {TABS.map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)}
+            className="gl-body px-6 py-3 rounded-lg text-sm font-semibold transition-all"
             style={{
-              padding: "10px 16px",
-              fontSize: 13.5,
-              fontWeight: 600,
-              background: "none",
-              border: "none",
-              color: tab === k ? COLORS.ink : COLORS.muted,
-              borderBottom: tab === k ? `2px solid ${COLORS.signal}` : "2px solid transparent",
-            }}
-          >
+              background: tab===k ? "linear-gradient(135deg, #FF6B35 0%, #E85520 100%)" : "transparent",
+              color: tab===k ? "#FFFFFF" : "#6B7280",
+              boxShadow: tab===k ? "0 2px 8px rgba(255,107,53,0.2)" : "none",
+              transform: tab===k ? "translateY(-1px)" : "none",
+            }}>
             {l}
           </button>
         ))}
       </div>
 
-      {tab === "listings" && (
-        <div
-          style={{
-            background: COLORS.panel,
-            border: `1px solid ${COLORS.line}`,
-            borderRadius: 12,
-            overflow: "hidden",
-          }}
-        >
-          {equipmentList.map((e, i) => {
-            const c = catByName(e.cat);
-            return (
-              <div
-                key={e.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 18px",
-                  borderTop: i ? `1px solid ${COLORS.line}` : "none",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 7,
-                      background: c.color + "22",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <c.icon size={16} color={c.color} />
+      {/* Listings */}
+      {tab==="listings" && (
+        <div className="executive-card overflow-hidden">
+          {equipmentList.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                style={{ background:"rgba(255,107,53,0.1)", border:"1px solid rgba(255,107,53,0.2)" }}>
+                <LayoutGrid size={28} style={{ color:"var(--c-p)" }}/>
+              </div>
+              <h3 className="gl-heading text-heading-lg mb-2 gradient-text">No equipment listed yet</h3>
+              <p className="text-body-md text-gray-500 mb-4">Start earning by adding your first piece of equipment to the marketplace.</p>
+              <button onClick={()=>setShowModal(true)} className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold">
+                <Plus size={16} className="mr-2"/>
+                List Your First Equipment
+              </button>
+            </div>
+          ) : (
+            equipmentList.map((e,i)=>{
+              const c=catByName(e.cat);
+              return (
+                <div key={e.id} className="flex items-center justify-between px-6 py-5 transition-all hover:bg-gray-50"
+                  style={{ borderTop: i?"1px solid #F3F4F6":"none" }}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background:c.color+"15", border: `1px solid ${c.color}30` }}>
+                      <c.icon size={20} style={{ color:c.color }}/>
+                    </div>
+                    <div>
+                      <div className="gl-heading text-heading-sm font-semibold mb-1" style={{ color:"#111827" }}>{e.name}</div>
+                      <div className="text-body-sm text-gray-500">{money(e.price)}/day · {e.loc}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="gl-body" style={{ fontWeight: 700, fontSize: 13.5 }}>
-                      {e.name}
+                  <span className={`professional-badge text-xs font-semibold ${e.status==="Available" ? "badge-available" : "badge-booked"}`}>
+                    {e.status}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Booking requests */}
+      {tab==="requests" && (
+        <div>
+          {requests.length===0 ? (
+            <div className="executive-card p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                style={{ background:"rgba(255,107,53,0.1)", border:"1px solid rgba(255,107,53,0.2)" }}>
+                <ClipboardList size={28} style={{ color:"var(--c-p)" }}/>
+              </div>
+              <h3 className="gl-heading text-heading-lg mb-2 gradient-text">No booking requests yet</h3>
+              <p className="text-body-md text-gray-500">When renters book your equipment it will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {requests.map(req=>(
+                <div key={req.id} className="executive-card overflow-hidden">
+                  {/* Request header */}
+                  <div className="flex items-center justify-between px-6 py-4"
+                    style={{ 
+                      background: req.status==="Pending" ? "rgba(245,158,11,0.08)" 
+                                : req.status==="Approved" ? "rgba(16,185,129,0.08)" 
+                                : "rgba(239,68,68,0.08)",
+                      borderBottom:"1px solid #F3F4F6" 
+                    }}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white text-sm"
+                        style={{ background:"linear-gradient(135deg,#FF6B35,#E85520)" }}>
+                        {req.renterName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="gl-heading text-heading-sm font-semibold mb-1" style={{ color:"#111827" }}>{req.renterName}</div>
+                        <div className="text-body-sm text-gray-500">{req.renterPhone}</div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: COLORS.muted }}>
-                      {money(e.price)}/day · {e.loc}
+                    <span className={`professional-badge text-xs font-semibold ${
+                      req.status==="Pending" ? "badge-maintenance" 
+                      : req.status==="Approved" ? "badge-available" 
+                      : "badge-booked"
+                    }`}>
+                      {req.status}
+                    </span>
+                  </div>
+
+                  <div className="p-6 space-y-5">
+                    {/* Equipment */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <LayoutGrid size={16} style={{ color:"var(--c-p)" }}/>
+                      <span className="gl-heading font-semibold text-gray-900">{req.equipmentName}</span>
+                      <span className="text-gray-400">·</span>
+                      <span className="gl-heading font-bold gradient-text">{money(req.totalAmount)}</span>
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="minimal-card p-4">
+                        <div className="section-label mb-2 flex items-center gap-1"><Calendar size={12}/> Rental Days</div>
+                        <div className="gl-heading text-heading-sm font-semibold text-gray-900">{req.rentalDays} days</div>
+                      </div>
+                      <div className="minimal-card p-4">
+                        <div className="section-label mb-2 flex items-center gap-1"><MapPin size={12}/> Delivery Site</div>
+                        <div className="text-body-sm font-medium text-gray-900 truncate">{req.siteAddress}</div>
+                      </div>
+                      <div className="minimal-card p-4">
+                        <div className="section-label mb-2 flex items-center gap-1"><Clock size={12}/> Submitted</div>
+                        <div className="text-body-sm font-medium text-gray-900">{req.submittedAt}</div>
+                      </div>
+                    </div>
+
+                    <div className="minimal-card p-4">
+                      <div className="section-label mb-2">Stated Purpose</div>
+                      <div className="text-body-md text-gray-700">{req.purpose}</div>
+                    </div>
+
+                    {/* Actions */}
+                    {req.status==="Pending" && (
+                      <div className="flex gap-3">
+                        <button onClick={()=>approveRequest(req.id)}
+                          className="btn-primary flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold">
+                          <CheckCircle2 size={16}/> Approve Booking
+                        </button>
+                        <button onClick={()=>rejectRequest(req.id)}
+                          className="btn-outline flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold">
+                          <X size={16}/> Decline
+                        </button>
+                      </div>
+                    )}
+                    {req.status==="Approved" && (
+                      <div className="flex items-center gap-3 p-4 rounded-xl professional-badge badge-available">
+                        <CheckCircle2 size={16}/>
+                        <span className="text-sm font-medium">Booking approved. Escrow funds will release on delivery.</span>
+                      </div>
+                    )}
+                    {req.status==="Rejected" && (
+                      <div className="flex items-center gap-3 p-4 rounded-xl professional-badge badge-booked">
+                        <X size={16}/>
+                        <span className="text-sm font-medium">Booking declined. Renter has been notified.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <span
-                  className="gl-body"
-                  style={{
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    background: e.status === "Available" ? "#E9F1E1" : "#F3E3DC",
-                    color: e.status === "Available" ? "#3E5E22" : "#8C3E1E",
-                  }}
-                >
-                  {e.status}
-                </span>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {tab === "requests" && (
-        <div className="p-8 text-center text-[#6B6A62] gl-body text-sm">
-          No new booking requests at this time.
-        </div>
-      )}
-
-      {tab === "earnings" && (
-        <div className="p-8 text-center text-[#6B6A62] gl-body text-sm">
-          Earnings breakdown coming soon.
+      {tab==="earnings" && (
+        <div className="executive-card p-12 text-center">
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.2)" }}>
+            <TrendingUp size={28} style={{ color:"#D97706" }}/>
+          </div>
+          <h3 className="gl-heading text-heading-lg mb-2 gradient-text-warm">Earnings breakdown</h3>
+          <p className="text-body-md text-gray-500">Coming soon — full revenue analytics.</p>
         </div>
       )}
 
       {/* Add Equipment Modal */}
-      {showAddModal && (
+      {showModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#DAD4C4] rounded-2xl p-6 max-w-lg w-full shadow-2xl my-8">
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#DAD4C4]">
+          <div className="executive-card w-full max-w-lg my-8 overflow-hidden animate-scale-in">
+            <div className="flex justify-between items-center p-6 pb-4"
+              style={{ background:"linear-gradient(145deg,#1F2937,#111827)" }}>
               <div>
-                <h3 className="gl-display font-bold text-xl text-[#1B1B18]">List New Equipment</h3>
-                <p className="gl-body text-xs text-[#6B6A62]">
-                  Upload details & photos to share your machinery on GearLink
-                </p>
+                <h3 className="gl-heading text-heading-lg font-bold text-white mb-1">List New Equipment</h3>
+                <p className="text-body-sm text-gray-400">Share your machinery on GearLink</p>
               </div>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-[#6B6A62] hover:text-[#1B1B18]"
-              >
-                <X size={20} />
+              <button onClick={()=>setShowModal(false)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                style={{ background:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.7)" }}>
+                <X size={20}/>
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
-              {/* Photo Upload */}
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Equipment Image / Photo
-                </label>
-                <div className="border-2 border-dashed border-[#DAD4C4] rounded-xl p-4 text-center bg-[#F1EDE3]/40 hover:bg-[#F1EDE3]/80 transition-colors cursor-pointer relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                  />
-                  {eqImagePreview ? (
-                    <div className="flex flex-col items-center">
-                      <img
-                        src={eqImagePreview}
-                        alt="Equipment preview"
-                        className="h-32 object-cover rounded-lg mb-2 shadow-sm"
-                      />
-                      <span className="text-xs text-[#5C7A32] font-semibold flex items-center gap-1">
-                        <CheckCircle2 size={13} /> Photo uploaded. Click to change.
-                      </span>
+            <form onSubmit={handleCreate} className="p-6 space-y-5">
+              {/* Photo upload */}
+              <div className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-all hover:border-orange-300"
+                style={{ borderColor:"#E5E7EB", background:"#FAFBFF" }}>
+                <input type="file" accept="image/*" onChange={handleImg}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"/>
+                {preview ? (
+                  <div className="flex flex-col items-center">
+                    <img src={preview} alt="preview" className="h-32 object-cover rounded-xl mb-3 shadow-md"/>
+                    <span className="text-body-sm font-medium flex items-center gap-2 text-green-600">
+                      <CheckCircle2 size={14}/> Photo uploaded. Click to change.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-2"
+                      style={{ background:"rgba(255,107,53,0.1)" }}>
+                      <Plus size={26} style={{ color:"var(--c-p)" }}/>
                     </div>
-                  ) : (
-                    <div className="py-2 flex flex-col items-center gap-1.5 text-[#6B6A62]">
-                      <div className="w-10 h-10 rounded-full bg-[#E2A33B]/20 text-[#B97F22] flex items-center justify-center">
-                        <Plus size={20} />
-                      </div>
-                      <span className="text-xs font-semibold text-[#1B1B18]">
-                        Click to upload machinery photo
-                      </span>
-                      <span className="text-[11px] text-[#6B6A62]">
-                        Supports PNG, JPG, WEBP (Max 5MB)
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    <span className="gl-heading text-heading-sm font-semibold text-gray-900">Click to upload photo</span>
+                    <span className="text-body-sm text-gray-500">PNG, JPG, WEBP (Max 5MB)</span>
+                  </div>
+                )}
               </div>
 
-              {/* Equipment Name */}
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Equipment Title / Model Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Caterpillar D6 Dozer or John Deere 5075E"
-                  value={eqName}
-                  onChange={(e) => setEqName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm border border-[#DAD4C4] rounded-lg bg-[#F1EDE3]/30 focus:bg-white focus:outline-none focus:border-[#243B34] text-[#1B1B18]"
-                />
+              <div className="form-field">
+                <label className="form-label">Equipment Name *</label>
+                <input type="text" required placeholder="e.g. John Deere 5075E Tractor" value={eqName}
+                  onChange={e=>setEqName(e.target.value)}/>
               </div>
 
-              {/* Category & Location */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                    Sector Category *
-                  </label>
-                  <select
-                    value={eqCat}
-                    onChange={(e) => setEqCat(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm border border-[#DAD4C4] rounded-lg bg-white focus:outline-none focus:border-[#243B34] text-[#1B1B18]"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-field">
+                  <label className="form-label">Sector *</label>
+                  <select value={eqCat} onChange={e=>setEqCat(e.target.value)}>
+                    {CATEGORIES.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                    Location / District *
-                  </label>
-                  <select
-                    value={eqLoc}
-                    onChange={(e) => setEqLoc(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm border border-[#DAD4C4] rounded-lg bg-white focus:outline-none focus:border-[#243B34] text-[#1B1B18]"
-                  >
-                    {["Fort Portal", "Kabarole", "Kasese", "Kyenjojo", "Bundibugyo", "Kamwenge"].map(
-                      (d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      )
-                    )}
+                <div className="form-field">
+                  <label className="form-label">District *</label>
+                  <select value={eqLoc} onChange={e=>setEqLoc(e.target.value)}>
+                    {["Fort Portal","Kabarole","Kasese","Kyenjojo","Bundibugyo","Kamwenge"].map(d=><option key={d}>{d}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Daily Rate */}
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Daily Rental Rate (UGX) *
-                </label>
+              <div className="form-field">
+                <label className="form-label">Daily Rate (UGX) *</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-[#6B6A62]">
-                    UGX
-                  </span>
-                  <input
-                    type="number"
-                    required
-                    min="10000"
-                    step="5000"
-                    placeholder="150000"
-                    value={eqPrice}
-                    onChange={(e) => setEqPrice(e.target.value)}
-                    className="w-full pl-14 pr-3.5 py-2.5 text-sm border border-[#DAD4C4] rounded-lg bg-[#F1EDE3]/30 focus:bg-white focus:outline-none focus:border-[#243B34] text-[#1B1B18] font-bold"
-                  />
+                  <span className="absolute left-4 top-4 text-sm font-semibold text-gray-500">UGX</span>
+                  <input type="number" required min="10000" step="5000" placeholder="150000" value={eqPrice}
+                    onChange={e=>setEqPrice(e.target.value)}
+                    className="pl-16 font-semibold"/>
                 </div>
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="text-xs font-semibold text-[#6B6A62] block mb-1">
-                  Description & Specifications
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="e.g. Excellent working condition, serviced weekly. Operator included upon request."
-                  value={eqDescription}
-                  onChange={(e) => setEqDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm border border-[#DAD4C4] rounded-lg bg-[#F1EDE3]/30 focus:bg-white focus:outline-none focus:border-[#243B34] text-[#1B1B18] resize-none"
-                />
+              <div className="form-field">
+                <label className="form-label">Description & Specs</label>
+                <textarea rows={3} placeholder="Excellent condition, serviced weekly. Operator available on request."
+                  value={eqDesc} onChange={e=>setEqDesc(e.target.value)}
+                  className="resize-none"/>
               </div>
 
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2.5 border border-[#DAD4C4] rounded-xl text-sm font-semibold text-[#6B6A62] hover:bg-[#F1EDE3]"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={()=>setShowModal(false)}
+                  className="btn-secondary flex-1 py-3 text-sm font-semibold">
                   Cancel
                 </button>
-                <GearButton variant="primary" style={{ flex: 2, justifyContent: "center", borderRadius: 12 }}>
+                <button type="submit"
+                  className="btn-primary flex-[2] py-3 text-sm font-semibold">
                   Publish Listing
-                </GearButton>
+                </button>
               </div>
             </form>
           </div>
